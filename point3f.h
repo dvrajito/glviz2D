@@ -24,7 +24,7 @@ class Point3f {
  
  public:
   // Constructor with default values.
-  Point3f(GLfloat x=0.0, GLfloat y=0.0, GLfloat z=0.0);
+  Point3f(GLfloat x = 0.0, GLfloat y = 0.0, GLfloat z = 0.0);
   // Constructor from a usual array.
   Point3f(GLfloat data[]);
   // Copy constructor
@@ -34,7 +34,7 @@ class Point3f {
 
   // A set_data function for each constructor.
   // Set data with default values.
-  void set_data(GLfloat x=0.0, GLfloat y=0.0, GLfloat z=0.0);
+  void set_data(GLfloat x = 0.0, GLfloat y = 0.0, GLfloat z = 0.0);
   // Constructor from a usual array.
   void set_data(GLfloat data[]);
   // Copy constructor

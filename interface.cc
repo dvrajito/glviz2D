@@ -17,7 +17,7 @@
 Road *rd = NULL;
 bool timer_on = false;
 int winWidth = 1200, winHeight = 900;
-char roadFile[100] = ROAD_FILE_ROOT"curvature/curvEtrack5R.txt";
+char roadFile[100] = ROAD_FILE_ROOT"trajectory21/EroadCenter.txt";
 char trajFile[100] = "";// ROAD_FILE_ROOT"trajectory18/trajGlbsEtrack5.txt";
 
 // initialize the window and GUI, create the road
@@ -62,6 +62,8 @@ void mouse(int btn, int state, int x, int y)
 // Callback for Ascii keyboard function
 void key(unsigned char key, int x, int y)
 {
+    char trj[] = "traj.txt";
+    char rtrj[] = "realTraj.txt";
     switch (key) {
     case 'q':
     case 'Q':
@@ -82,11 +84,11 @@ void key(unsigned char key, int x, int y)
         break;
     case 'w':
     case 'W':
-        rd->writeTrajFile("traj.txt");
+        rd->writeTrajFile(trj);
         break;
     case 't':
     case 'T':
-        rd->writeRealPts("realTraj.txt");
+        rd->writeRealPts(rtrj);
         break;
     case ' ':
         rd->optimizeTraj();
@@ -129,12 +131,12 @@ void setView(Point3f &vMin, Point3f &vMax, int i)
     else if (fabs(vMin[i]) < fabs(vMax[i]))
     {
         vMax[i] *= 1.1;
-        vMin[i] -= 0.09091*vMax[i];
+        vMin[i] -= 0.09091 * vMax[i];
     }
     else
     {
         vMin[i] *= 1.1;
-        vMax[i] -= 0.09091*vMin[i];
+        vMax[i] -= 0.09091 * vMin[i];
     }
 }
 
@@ -174,7 +176,11 @@ void createObjects()
 {
     //rd = new Road("alpine2curv.txt");
     //rd = new Road("CGSpeedway1Curv.txt");
-    rd = new Road(roadFile);
+    //rd = new Road(roadFile);
+    rd = new Road();
+    rd->readCenter(roadFile);
+    rd->draw();
+
     if (trajFile[0] != '\0')
         rd->readTrajFile(trajFile);
     else

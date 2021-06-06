@@ -14,7 +14,7 @@
 
 #include <GL/glut.h>
 
-#define FILE_ROOT "C:/Users/Dana/Documents/develop/gazelle/data/"
+#define FILE_ROOT "D:/develop/meep/data/"
 
 void display(void);
 
