@@ -562,9 +562,16 @@ void Road::readTrajFile(char *filename, bool redraw)
         {
             while (scan < nrPoints && points[scan].dist <= dist2)
             {
-                alpha = (points[scan].dist - dist1) / (dist2 - dist1);
-                points[scan].traj = (1 - alpha) * traj1 + alpha * traj2;
+                if (dist1 == dist2)
+                    points[scan].traj = traj2;
+                else
+                {
+                    alpha = (points[scan].dist - dist1) / (dist2 - dist1);
+                    points[scan].traj = (1 - alpha) * traj1 + alpha * traj2;
+                }
                 computeTrajPt(scan);
+                if (isnan(points[scan].traj))
+                    cout << "nan at " << scan << " dist " << points[scan].dist << endl;
                 scan++;
             }
             dist1 = dist2;
@@ -756,7 +763,7 @@ void Road::findKeyFrames()
                 else
                     kf.sign = -1;
                 cout << keyframes.size() << "\tkey frame:\t" << kf.pt << "\tlength:\t" << kf.length
-                     << "\tsign:\t" << kf.sign << endl;
+                     << "\tsign:\t" << kf.sign << " dist:\t" << points[kf.pt].dist << endl;
                 if (kf.pt > 0)
                     keyframes.push_back(kf); 
                 else
@@ -905,6 +912,45 @@ void Road::setTrajectoryKF(double traj[], int size, int startKF, int endKF, int 
             p2 = p1 + step;
             if (p2 > keyframes[k + 1].pt)
                 p2 = keyframes[k + 1].pt;
+            for (j = 0; j < step; j++)
+            {
+                trj = t1 * double(step - j) / step + t2 * double(j) / step;
+                points[p1 + j].traj = trj;
+            }
+            i++;
+            p1 = p2;
+        }
+    }
+}
+
+// Set the trajectory between start and end points with given density 
+// with the trajectory coming in as a vector
+void Road::setTrajectoryKF(vector<double> traj, int startKF, int endKF, int interm)
+{
+    int i = 0, j = 0, k = 0, p1, p2, p3, step;
+    double t1, t2, trj = 0;
+
+    int size = traj.size();
+    for (k = startKF; k < endKF && k < keyframes.size(); k++)
+    {
+        p1 = keyframes[k].pt;
+        if (k < keyframes.size() - 1)
+            p3 = keyframes[k + 1].pt;
+        else
+            p3 = points.size() - 1;
+        step = int(ceil(double(p3 - p1) / interm));
+        while (i < size && p1 < p3)
+        {
+            t1 = traj[i];
+            if (i < size - 1)
+                t2 = traj[i + 1];
+            else if (k < keyframes.size() - 1)
+                t2 = traj[size - 1];
+            else
+                t2 = 0;
+            p2 = p1 + step;
+            if (p2 > p3)
+                p2 = p3;
             for (j = 0; j < step; j++)
             {
                 trj = t1 * double(step - j) / step + t2 * double(j) / step;

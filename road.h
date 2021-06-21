@@ -188,6 +188,10 @@ public:
     
     // Set the trajectory between start and end points with given density
     void setTrajectoryKF(double traj[], int size, int startKF, int endKF, int step);
+    
+    // Set the trajectory between start and end points with given density 
+    // with the trajectory coming in as a vector
+    void setTrajectoryKF(vector<double> traj, int startKF, int endKF, int interm);
 
     // Set the trajectory between start and end points with given density
     void setTrajectory(vector<double> traj, int startPt, int endPt, int step);
