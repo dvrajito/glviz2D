@@ -3,7 +3,7 @@
    License: Creative Commons, Attribution
    Author:  Dana Vrajitoru
    File:    road.cc
-   Updated: June 2019
+   Updated: June 2021
 
    Definition of a class drawing a road out of a set of points defined
    as distance plus angle.
@@ -34,17 +34,8 @@
 Road::Road(char *filename)
     : min(0, 0, 0), max(0, 0, 0)
 {
-    roadScale = 0.065; // taken from the comments above
-    almostFlat = 0.0005;
-    inc = 0.1;
-    curvScale = 20;
-    roadWidth = 25;
-    hasWidth = true;
-    hasTraj = true;
-    rdType = allScale; // skipStep;
-    roadStep = 3.8;
-    trajStep = 5;
-    if (filename[0] != '\0') 
+    init();
+    if (filename) 
         init(filename);
 }
 
@@ -52,16 +43,54 @@ Road::Road(char *filename)
 Road::Road(char *filename, float startPt, float endPt)
     : min(0, 0, 0), max(0, 0, 0)
 {
-    roadScale = 0.065; // some default value
+    init();
     if (filename)
         init(filename, startPt, endPt);
+}
+
+// initialize the road with default values
+void Road::init()
+{
+    roadScale = 0.065; // taken from the comments above
+    almostFlat = 0.0005;
+    inc = 0.1;
+    curvScale = 20;
+    roadWidth = 5;
+    hasWidth = true;
+    // To avoid warnings:
+    curveLength = 100;
+    flatLength = 100;
+    leftScale = 0.1;
+    maxCurv = 1;
+    roadId = 0;
+    trajId = 0;
+    almostFlat = 0.1;
+    curvScale = 1;
+    curveLength = 1;
+    flatLength = 0;
+    hasWidth = true;
+    inc = 0;
+    // up to here the values don't have to make sense
+    hasTraj = true;
+    rdType = allScale; // skipStep;
+    roadStep = 3.8;
+    trajStep = 5;
 }
 
 // initialize the road from a file 
 void Road::init(char *filename)
 {
-    if (filename[0] != '\0') {
+    if (filename) {
         read(filename);
+        draw();
+    }
+}
+
+// initialize the road from a file containing the centerpoints
+void Road::initCenter(char* filename)
+{
+    if (filename) {
+        readCenter(filename);
         draw();
     }
 }
@@ -88,7 +117,7 @@ void Road::init(char **aDict, int nOpt)
         else if (strcmp(aDict[2 * i], "curvature scale") == 0)
             curvScale = atof(aDict[2 * i + 1]);
         else if (strcmp(aDict[2 * i], "trajectory step") == 0)
-            trajStep = atof(aDict[2 * i + 1]);
+            trajStep = atoi(aDict[2 * i + 1]);
         else if (strcmp(aDict[2 * i], "flat length") == 0)
             flatLength = atoi(aDict[2 * i + 1]);
         else if (strcmp(aDict[2 * i], "curve length") == 0)
@@ -112,8 +141,20 @@ void Road::read(char *filename)
         readPointList(fin);
     else
         cout << "Could not open the road file " << filename << endl;
+    fin.close();
 }
 
+// Read the road from a file containing the centerline points
+// and store the points in the vector
+void Road::readCenter(char* filename)
+{
+    ifstream fin(filename);
+    if (fin.good())
+        readCenterList(fin);
+    else
+        cout << "Could not open the road file " << filename << endl;
+    fin.close();
+}
 
 // Call the display list.
 void Road::display()
@@ -141,6 +182,7 @@ void Road::draw(char *filename)
             drawRibbonPtList(fin);
     else
         cout << "Could not open the road file " << filename << endl;
+    fin.close();
 }
 
 // To be reimplemented for this class.
@@ -153,6 +195,7 @@ void Road::draw(char *filename, float startPt, float endPt)
         readPointList(fin, startPt, endPt);
     else
         cout << "Could not open the road file " << filename << endl;
+    fin.close();
 }
 
 // Draw from the list of points already stored.
@@ -178,7 +221,7 @@ void Road::drawLineFromPoints()
     glNewList(roadId, GL_COMPILE);
     glColor3f(1, 1, 0);  // yellow
     glBegin(GL_LINE_STRIP);
-    for (int i = 0; i < points.size(); i++)
+    for (unsigned int i = 0; i < points.size(); i++)
         glVertex2f(points[i].pt.x(), points[i].pt.y());
     glEnd();
     glEndList();
@@ -190,13 +233,14 @@ void Road::drawLineFromPoints()
 void Road::drawRibbonFromPoints()
 {
     Point3f pt(0, 0, 0), dir(1, 0, 0), nor(0, 0, 0),
-            pt1(0, roadWidth, 0), pt2(0, -roadWidth, 0);
+            pt1(points[0].pt.x(), points[0].pt.y() + roadWidth, 0), 
+            pt2(points[0].pt.x(), points[0].pt.y() - roadWidth, 0);
     glNewList(roadId, GL_COMPILE);
     glColor3f(1, 1, 0);  // yellow
     glBegin(GL_TRIANGLE_STRIP);
     glVertex2f(pt1.x(), pt1.y());
     glVertex2f(pt2.x(), pt2.y());
-    for (int i = 1; i < points.size(); i++) 
+    for (unsigned int i = 1; i < points.size(); i++) 
     {
         pt = points[i].pt;
         dir = pt;
@@ -234,8 +278,8 @@ void Road::setTrajColor(int i, GLfloat &red, GLfloat &blue)
         break;
     case 1:
         blue = red = 0;
-        blue = 0.5*(points[i].curv + 1) / maxCurv;
-        red = 0.5*(realTrajCurv(i) + 1) / maxCurv;
+        blue = 0.5 * (points[i].curv + 1) / maxCurv;
+        red = 0.5 * (realTrajCurv(i) + 1) / maxCurv;
         break;
     case 2:
         blue = red = 0;
@@ -269,8 +313,8 @@ void Road::drawTrajFromPoints()
     glColor3f(0.5, 0, 0.5);  // purple
     glLineWidth(1.5);
     glBegin(GL_LINE_STRIP);
-    glVertex2f(pt.x(), pt.y());
-    for (int i = 1; i < points.size(); i++)
+    glVertex2f(points[0].pt.x(), points[0].pt.y());
+    for (unsigned int i = 1; i < points.size(); i++)
     {
         pt1 = points[i].trjPt;
         // now set the color
@@ -311,7 +355,7 @@ void Road::drawPointList(ifstream &fin)
         if (deltad != 0) {
             //dir *= deltad; // simple
             //dir *= deltad*(0.0001 + fabs(sinTau)); // adjusted
-            dir *= deltad*(0.0001 + cosTau); // other version
+            dir *= deltad * (0.0001 + cosTau); // other version
             pt += dir;
             // draw the new point
             glVertex2f(pt.x(), pt.y());
@@ -359,7 +403,7 @@ void Road::drawRibbonPtList(ifstream &fin)
         if (deltad != 0) {
             //dir *= deltad; // simple
             //dir *= deltad*(0.0001 + fabs(sinTau)); // adjusted
-            dir *= deltad*(0.0001 + cosTau); // other version
+            dir *= deltad * (0.0001 + cosTau); // other version
             pt += dir;
             nor.x() = dir.y();   // perpendicular in the xy plane
             nor.y() = -dir.x();
@@ -392,6 +436,45 @@ void Road::readPointList(ifstream &fin)
     else
         readStepPointList(fin, 0, 1000000);
 
+}
+
+// Read the centerline points from the file, calculate and store the curvature 
+void Road::readCenterList(ifstream& fin)
+{
+    int nrPoints;
+    float cosTau, sinTau;
+    fin >> nrPoints;
+    RoadPt point;
+    Point3f nor(0, 1, 0), pt1, pt2;
+    point.norm = nor;
+    fin >> point.pt[0] >> point.pt[1];
+    point.pt[2] = 0;
+    point.dist = 0;
+    point.curv = 0;
+    points.push_back(point);
+    for (int i = 1; i < nrPoints; i++) {
+        fin >> point.pt[0] >> point.pt[1];
+        point.dist = points[i - 1].dist + point.pt.distance(points[i - 1].pt);
+        points.push_back(point);
+        if (i > 1) {
+            // calculate the normal as the average of the normal to the previous two segments
+            pt1 = points[i - 1].pt;
+            pt1 -= points[i - 2].pt;
+            pt1.rotate_z(RADIANS(90));
+            pt2 = points[i].pt;
+            pt2 -= points[i - 1].pt;
+            pt2.rotate_z(RADIANS(90));
+            points[i - 1].norm = pt1;
+            points[i - 1].norm += pt2;
+            points[i - 1].norm.normalize();
+            // Calculate the curvature based on the angle between the two segments used above
+            cosTau = pt1.scalarprod(pt2) / (pt1.norm() * pt2.norm());
+            sinTau = sqrt(1 - cosTau * cosTau);
+            points[i - 1].curv = sinTau;
+            updateMinMax(point.pt, sinTau);
+        }
+    }
+    cout << "min: " << min << " max: " << max << " maxCurv " << maxCurv << endl;
 }
 
 // Read the data from the file, calculate and store the points 
@@ -434,7 +517,7 @@ void Road::readPointList(ifstream &fin, float startPt, float endPt)
             if (deltad != 0) {
                 //dir *= deltad; // simple
                 //dir *= deltad*(0.0001 + fabs(sinTau)); // adjusted
-                dir *= deltad*(0.0001 + cosTau); // other version
+                dir *= deltad * (0.0001 + cosTau); // other version
                 pt += dir;
                 // add the new point
                 points.push_back(point);
@@ -496,7 +579,7 @@ void Road::readStepPointList(ifstream &fin, float startPt, float endPt)
                 if (deltad != 0) {
                     //dir *= deltad; // simple
                     //dir *= deltad*(0.0001 + fabs(sinTau)); // adjusted
-                    dir *= deltad*(0.0001 + cosTau); // other version
+                    dir *= deltad * (0.0001 + cosTau); // other version
                     pt += dir;
                     // add the new point
                     points.push_back(point);
@@ -536,7 +619,7 @@ void Road::computeTrajPt(int i)
 // Compute the real value of the trajectory points between start and end indexes
 void Road::computeTrajPts(int start, int end)
 {
-    for (int i = start; i < end && i < points.size(); i++)
+    for (unsigned int i = start; i < end && i < points.size(); i++)
         computeTrajPt(i);
 }
 
@@ -578,6 +661,7 @@ void Road::readTrajFile(char *filename, bool redraw)
             traj1 = traj2;
         }
     }
+    fin.close();
     // fill out the points at the end if the trajectory stops short of the last point
     while (scan < points.size())
     {
@@ -599,7 +683,7 @@ void Road::writeTrajFile(char *filename)
         cout << "Could not open the file " << filename << " to write the trajectory" << endl;
         return;
     }
-    for (int i = 0; i < points.size(); i++)
+    for (unsigned int i = 0; i < points.size(); i++)
         fout << points[i].dist << "\t" << points[i].traj << endl;
     fout.close();
 }
@@ -607,7 +691,7 @@ void Road::writeTrajFile(char *filename)
 // set the trajectory as a constant
 void Road::setConstTraj(float tr, bool redraw)
 {
-    for (int i = 0; i < points.size(); i++)
+    for (unsigned int i = 0; i < points.size(); i++)
     {
         points[i].traj = tr;
         computeTrajPt(i);
@@ -627,7 +711,7 @@ void Road::writeRealPts(char *filename)
         return;
     }
     float realCrv;
-    for (int i = 0; i < points.size(); i++)
+    for (unsigned int i = 0; i < points.size(); i++)
     {
         realCrv = realTrajCurv(i);
         fout << points[i].dist << "\t" << points[i].trjPt << "\t" << realCrv << endl;
@@ -641,7 +725,7 @@ void Road::optimizeTraj()
 {
     float realTC;
     //findControlPoints(ctrlPts);
-    for (int i = 1; i < points.size() - 1; i++)
+    for (unsigned int i = 1; i < points.size() - 1; i++)
     {
         realTC = realTrajCurv(i);
         // if the real curve is not flat and we're not already at the maximum trajectory
@@ -672,7 +756,7 @@ void Road::optimizeTraj()
 // Averages the values with those around in a given radius.
 void Road::smoothTrajectory(int radius)
 {
-    int i, j;
+    unsigned int i, j;
     float value;
     for (i = radius; i < points.size() - radius; i++)
     {
@@ -702,7 +786,7 @@ void Road::findControlPoints(vector<int> &data)
     data.push_back(0);
     realT1 = realTrajCurv(0);
     realT2 = realTrajCurv(1);
-    for (int i = 1; i < points.size()-1; i++)
+    for (unsigned int i = 1; i < points.size()-1; i++)
     {
         realT3 = realTrajCurv(i + 1);
         // add points of maximum or minimum real curvature
@@ -742,7 +826,7 @@ void Road::findKeyFrames()
         keyframes[0].sign = 1;
     else
         keyframes[0].sign = -1;
-    for (int i = 1; i < points.size(); i++)
+    for (unsigned int i = 1; i < points.size(); i++)
     {
         if (i < points.size() - 1 && isFlat(i) && flat) // flat stretch continues
             endStr++;
@@ -845,7 +929,7 @@ void Road::findNextAnchorKF(int &kfStart, int &kfEnd)
 // of points equal to flatLength.
 int Road::findNextAnchor(int start, bool &flat)
 {
-    int first=start, current=start;
+    unsigned int first = start, current = start;
     flat = true;
     // get out of the current flat patch first
     while (start < points.size() && isFlat(start))
@@ -989,7 +1073,7 @@ double Road::sumDistance(int startPt, int endPt)
 {
     double sum = 0;
     Point3f prevPt = points[startPt].trjPt, thisPt;
-    for (int i = startPt+1; i < endPt && i < points.size(); i++)
+    for (unsigned int i = startPt+1; i < endPt && i < points.size(); i++)
     {
         thisPt = points[i].trjPt;
         sum += thisPt.distance(prevPt);
@@ -1012,7 +1096,7 @@ double Road::findMaxCurv(int startPt, int endPt)
 double Road::sumCurv(int startPt, int endPt)
 {
     double crv = 0, rc = 0, crv1 = 0; // it won't be larger than this
-    for (int i = startPt; i < endPt && i < points.size(); i++)
+    for (unsigned int i = startPt; i < endPt && i < points.size(); i++)
     {
         rc = realTrajCurv(i);
         crv += fabs(rc);

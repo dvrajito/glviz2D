@@ -14,7 +14,7 @@
 
 #include <GL/glut.h>
 
-#define ROAD_FILE_ROOT "C:/Users/Dana/Documents/develop/gazelle/data/"
+#define ROAD_FILE_ROOT "D:/develop/meep/data/"
 
 // initialize the window and GUI, create the road
 void glMainInit(int argc, char **argv);

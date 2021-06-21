@@ -3,7 +3,7 @@
    License: Creative Commons, Attribution
    Author:  Dana Vrajitoru
    File:    road.cc
-   Updated: April 2019
+   Updated: June 2021
 
    Definition of a class drawing a road out of a set of points defined
    as distance plus angle.
@@ -20,8 +20,8 @@ using namespace std;
 #include <cmath>
 
 #define MAX_TRAJ 0.8
-#define MMAX(a, b) a>b ? a : b
-#define MMIN(a, b) a>b ? b : a
+#define MMAX(a, b) a > b ? a : b
+#define MMIN(a, b) a > b ? b : a
 
 struct RoadPt {
     float dist;
@@ -49,7 +49,7 @@ public:
                       // E-Track 5: 0.01, Alpine 2: 0.002, E-Road: 0.004, E-Track 4: 0.001 
           inc,        // increment in the trajectory optimization
           curvScale,  // scale factor for the curvature in optimizing the trajectory
-          leftScale; // scale factor for the left-turning curves
+          leftScale;  // scale factor for the left-turning curves
 
     float roadScale;  // scale the curvature by it when drawing the road
     float roadWidth;  // lateral width of the road; only relevant for drawing it
@@ -65,13 +65,19 @@ public:
     vector<KeyFrame> keyframes;
 
     // constructor from a file
-    Road(char *filename = "");
+    Road(char *filename = NULL);
 
     // Constructor from a file with start and end points
     Road(char *filename, float startPt, float endPt);
 
     // initialize the road from a file 
     void init(char *filename);
+
+    // initialize the road from a file containing the centerpoints
+    void initCenter(char* filename);
+
+    // initialize the road with default values 
+    void init();
 
     // initialize from a file between the indexes startPt and endPt
     void init(char *filename, float startPt, float endPt);
@@ -117,8 +123,14 @@ public:
     // Read the road from a file and store the points in a vector
     void read(char *filename);
 
+    // Read the road from a file containing the centerline and store the points in a vector
+    void readCenter(char* filename);
+
     // Read the data from the file, calculate and store the points 
     void readPointList(ifstream &fin);
+
+    // Read the centerline points from the file, calculate and store the curvature 
+    void readCenterList(ifstream& fin);
     
     // Read the data from the file, calculate and store the points 
     void readPointList(ifstream &fin, float startPt, float endPt);

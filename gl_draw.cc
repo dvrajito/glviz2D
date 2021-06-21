@@ -39,7 +39,7 @@ void gl_box2D(Point2d p1, Point2d p2)
 void gl_polygon(const vector3f &coords, const Point3f &normal)
 {
     glBegin(GL_POLYGON);
-    for (int i = 0; i < coords.size(); i++) {
+    for (unsigned int i = 0; i < coords.size(); i++) {
         glNormal3f(normal[0], normal[1], normal[2]);
         glVertex3f(coords[i][0], coords[i][1], coords[i][2]);
     }
@@ -50,7 +50,7 @@ void gl_polygon(const vector3f &coords, const Point3f &normal)
 void gl_triangle_strip(const vector3f &coords, const vector3f &normals)
 {
     glBegin(GL_TRIANGLE_STRIP);
-    for (int i = 0; i < coords.size(); i++) {
+    for (unsigned int i = 0; i < coords.size(); i++) {
         glNormal3f(normals[i][0], normals[i][1], normals[i][2]);
         glVertex3f(coords[i][0], coords[i][1], coords[i][2]);
     }
@@ -62,7 +62,7 @@ void gl_triangle_strip(const vector3f &coords1, const vector3f &coords2,
     const vector3f &normals1, const vector3f &normals2)
 {
     glBegin(GL_TRIANGLE_STRIP);
-    for (int i = 0; i < coords1.size(); i++) {
+    for (unsigned int i = 0; i < coords1.size(); i++) {
         glNormal3f(normals1[i][0], normals1[i][1], normals1[i][2]);
         glVertex3f(coords1[i][0], coords1[i][1], coords1[i][2]);
         glNormal3f(normals2[i][0], normals2[i][1], normals2[i][2]);
@@ -161,7 +161,7 @@ void gl_cone_strip(const vector3f &coords, float radia[], int precision)
     glEnable(GL_LIGHTING);
 
     //Draw each of the cylinders
-    for (int i = 0; i < coords.size() - 1; i++) {
+    for (unsigned int i = 0; i < coords.size() - 1; i++) {
         Point3f a = coords[i];
         Point3f b = coords[i + 1];
         Point3f c;
@@ -196,7 +196,7 @@ void gl_cone_strip(const vector3f &coords, float radia[], int precision)
                 angle = 0.0;
             else
                 angle = (float)asin((float)axis_norm);
-            glRotated((angle * 360) / (2 * M_PI), axis[0], axis[1], axis[2]);
+            glRotated((angle * 360.0) / (2 * M_PI), axis[0], axis[1], axis[2]);
             gluCylinder(Cone, radia[i], radia[i + 1],
                 c_norm, slices, stacks);
         }
@@ -238,7 +238,7 @@ void gl_cylinder_strip(const vector3f &coords, float width, int precision)
     glEnable(GL_LIGHTING);
 
     //Draw each of the cylinders
-    for (int i = 0; i < coords.size() - 1; i++) {
+    for (unsigned int i = 0; i < coords.size() - 1; i++) {
         Point3f a = coords[i];
         Point3f b = coords[i + 1];
         Point3f c;
@@ -273,7 +273,7 @@ void gl_cylinder_strip(const vector3f &coords, float width, int precision)
                 angle = 0.0;
             else
                 angle = (float)asin((float)axis_norm);
-            glRotated((angle * 360) / (2 * M_PI), axis[0], axis[1], axis[2]);
+            glRotated((angle * 360.0) / (2 * M_PI), axis[0], axis[1], axis[2]);
             gluCylinder(Cylinder, width, width,
                 c_norm, slices, stacks);
         }
@@ -366,7 +366,7 @@ void gl_ellipsoid(GLfloat center_x, GLfloat center_y, GLfloat center_z,
 // Mirror the vectors over the z axis.
 void mirror_z(vector3f &coord)
 {
-    for (int i = 0; i < coord.size(); i++)
+    for (unsigned int i = 0; i < coord.size(); i++)
         coord[i][2] = -coord[i][2];
 }
 
@@ -374,7 +374,7 @@ void mirror_z(vector3f &coord)
 // one.
 void mirror_z(const vector3f &coord, vector3f &coord1)
 {
-    for (int i = 0; i < coord.size(); i++) {
+    for (unsigned int i = 0; i < coord.size(); i++) {
         coord1[i][0] = coord[i][0];
         coord1[i][1] = coord[i][1];
         coord1[i][2] = -coord[i][2];
@@ -388,7 +388,7 @@ void add_normals(const vector3f &coords1, const vector3f &coords2,
     vector3f &normals1, vector3f &normals2)
 {
     Point3f nv;
-    int i, k, size = coords1.size();
+    int i, size = coords1.size();
     for (i = 0; i < size - 1; i++) {
         nv.compute_normal_vector(coords1[i], coords2[i], coords1[i + 1]);
         normals1[i] += nv;      //    --
@@ -411,15 +411,15 @@ void normalize_vectors(Point3f normals[], int size)
 // Normalizes each vector in the array.
 void normalize_vectors(vector3f &normals)
 {
-    for (int i = 0; i < normals.size(); i++)
+    for (unsigned int i = 0; i < normals.size(); i++)
         normals[i].normalize();
 }
 
 // Normalizes each vector in the matrix.
 void normalize_vectors(matrix3f &normals)
 {
-    for (int i = 0; i < normals.size(); i++)
-        for (int j = 0; j < normals[i].size(); j++)
+    for (unsigned int i = 0; i < normals.size(); i++)
+        for (unsigned int j = 0; j < normals[i].size(); j++)
             normals[i][j].normalize();
 }
 

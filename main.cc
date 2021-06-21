@@ -3,7 +3,7 @@
    License: Creative Commons, Attribution
    Author:  Dana Vrajitoru
    File:    main.cc
-   Updated: March 2019
+   Updated: June 2021
 
    Main function for the road visualization project.
 

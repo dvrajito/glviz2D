@@ -330,27 +330,27 @@ void Point3f::gl_normal() const
 void Point3f::rotate_x(float angle)
 {
   Point3f temp;
-  temp[0]=point[0];
-  temp[1]=cos(angle)*point[1] - sin(angle)*point[2];
-  temp[2]=sin(angle)*point[1] + cos(angle)*point[2];
+  temp[0] = point[0];
+  temp[1] = cos(angle)*point[1] - sin(angle)*point[2];
+  temp[2] = sin(angle)*point[1] + cos(angle)*point[2];
   set_data(temp);
 }
 
 void Point3f::rotate_y(float angle)
 {
   Point3f temp;
-  temp[0]=cos(angle)*point[0] - sin(angle)*point[2];
-  temp[1]=point[1];
-  temp[2]=sin(angle)*point[0] + cos(angle)*point[2];
+  temp[0] = cos(angle)*point[0] - sin(angle)*point[2];
+  temp[1] = point[1];
+  temp[2] = sin(angle)*point[0] + cos(angle)*point[2];
   set_data(temp);
 }
 
 void Point3f::rotate_z(float angle)
 {
   Point3f temp;
-  temp[0]=cos(angle)*point[0] - sin(angle)*point[1];
-  temp[1]=sin(angle)*point[0] + cos(angle)*point[1];
-  temp[2]=point[2];
+  temp[0] = cos(angle)*point[0] - sin(angle)*point[1];
+  temp[1] = sin(angle)*point[0] + cos(angle)*point[1];
+  temp[2] = point[2];
   set_data(temp);
 }
 
