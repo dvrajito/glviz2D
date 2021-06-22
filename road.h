@@ -216,6 +216,17 @@ public:
 
     // Sum the curvature between start and end points
     double sumCurv(int startPt, int endPt);
+
+    ////////////////////////// Trajectory Transformation ///////////////////////////
+    
+    // Scale the trajectory uniformly by a scale factor.
+    void scaleTraj(float scaleFactor);
+
+    // Translate the trajectory uniformly by a vector.
+    void translateTraj(Point3f vect);
+
+    // Set the starting point of the trajectory by moving it along x. 
+    void setStartingX(float stx);
 };
 
 #endif

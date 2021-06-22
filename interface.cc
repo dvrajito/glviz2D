@@ -17,7 +17,7 @@
 Road *rd = NULL;
 bool timer_on = false;
 int winWidth = 1200, winHeight = 900;
-char roadFile[100] = ROAD_FILE_ROOT"trajectory21/EroadCenter.txt";
+char roadFile[100] = ROAD_FILE_ROOT"trajectory21/ALpine2center.txt";
 char trajFile[100] = "";// ROAD_FILE_ROOT"trajectory18/trajGlbsEtrack5.txt";
 
 // initialize the window and GUI, create the road

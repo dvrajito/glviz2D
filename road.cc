@@ -55,7 +55,7 @@ void Road::init()
     almostFlat = 0.0005;
     inc = 0.1;
     curvScale = 20;
-    roadWidth = 5;
+    roadWidth = 3;
     hasWidth = true;
     // To avoid warnings:
     curveLength = 100;
@@ -152,7 +152,7 @@ void Road::readCenter(char* filename)
     if (fin.good())
         readCenterList(fin);
     else
-        cout << "Could not open the road file " << filename << endl;
+        cout << "Could not open the road centerline file " << filename << endl;
     fin.close();
 }
 
@@ -233,7 +233,7 @@ void Road::drawLineFromPoints()
 void Road::drawRibbonFromPoints()
 {
     Point3f pt(0, 0, 0), dir(1, 0, 0), nor(0, 0, 0),
-            pt1(points[0].pt.x(), points[0].pt.y() + roadWidth, 0), 
+            pt1(points[0].pt.x(), points[0].pt.y() + 2*roadWidth, 0), 
             pt2(points[0].pt.x(), points[0].pt.y() - roadWidth, 0);
     glNewList(roadId, GL_COMPILE);
     glColor3f(1, 1, 0);  // yellow
@@ -439,11 +439,11 @@ void Road::readPointList(ifstream &fin)
 }
 
 // Read the centerline points from the file, calculate and store the curvature 
-void Road::readCenterList(ifstream& fin)
+void Road::readCenterList(ifstream &fin)
 {
     int nrPoints;
-    float cosTau, sinTau;
-    fin >> nrPoints;
+    float cosTau, sinTau, totalDist, realDist, scaleF;
+    fin >> nrPoints >> realDist;
     RoadPt point;
     Point3f nor(0, 1, 0), pt1, pt2;
     point.norm = nor;
@@ -451,7 +451,9 @@ void Road::readCenterList(ifstream& fin)
     point.pt[2] = 0;
     point.dist = 0;
     point.curv = 0;
+    point.traj = 1;
     points.push_back(point);
+    point.traj = 0;
     for (int i = 1; i < nrPoints; i++) {
         fin >> point.pt[0] >> point.pt[1];
         point.dist = points[i - 1].dist + point.pt.distance(points[i - 1].pt);
@@ -474,7 +476,9 @@ void Road::readCenterList(ifstream& fin)
             updateMinMax(point.pt, sinTau);
         }
     }
-    cout << "min: " << min << " max: " << max << " maxCurv " << maxCurv << endl;
+    totalDist = points[nrPoints - 1].dist + points[nrPoints - 1].pt.distance(points[0].pt);
+    cout << "min: " << min << " max: " << max << " maxCurv " << maxCurv 
+        << " total dist " << totalDist << endl;
 }
 
 // Read the data from the file, calculate and store the points 
@@ -1105,4 +1109,41 @@ double Road::sumCurv(int startPt, int endPt)
         crv1 = crv;
     }
     return crv;
+}
+
+// Scale the trajectory uniformly by a scale factor.
+void Road::scaleTraj(float scaleFactor)
+{
+    // the norm, curvature, and trajectory should stay the same
+    for (int i = 0; i < points.size(); i++) {
+        points[i].pt *= scaleFactor;
+        points[i].trjPt *= scaleFactor;
+        points[i].dist *= scaleFactor;
+    }
+    min *= scaleFactor;
+    max *= scaleFactor;
+}
+
+// Translate the trajectory uniformly by a vector.
+void Road::translateTraj(Point3f vect)
+{
+    // the norm, curvature, distance, and trajectory should stay the same
+    for (int i = 0; i < points.size(); i++) {
+        points[i].pt += vect;
+        points[i].trjPt += vect;
+    }
+    min += vect;
+    max += vect;
+}
+
+// Set the starting point of the trajectory by moving it along x. 
+void Road::setStartingX(float stx)
+{
+    float diff = stx - points[0].pt.x();
+    points[0].pt[0] = stx;
+    points[points.size() - 1].pt[0] += diff;
+    // points[points.size() - 1].dist += diff; // doesn't actually change
+    for (int i = 0; i < points.size()-1; i++) {
+        points[i].dist -= diff;
+    }
 }
