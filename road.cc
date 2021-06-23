@@ -16,15 +16,13 @@
 #include "road.h"
 #include "General.h"
 
-// Optimal road scales: 
-// E-Track5 0.062 left *
-// E-Track5 0.18  right
+// Optimal road scales + left scale:
 // E-Track4 0.85  left
 // E-Track4 0.06  right *
 // E-Road   0.065 right *
 // E-Road   0.036 left
 // Alpine2  0.067 left
-// Alpine2  0.15  right *
+// Alpine2  0.15  0.62 right *
 
 /////////// Skip step values
 // E-Track5 2.5 right
@@ -51,23 +49,23 @@ Road::Road(char *filename, float startPt, float endPt)
 // initialize the road with default values
 void Road::init()
 {
-    roadScale = 0.065; // taken from the comments above
+    roadScale = 0.15; // taken from the comments above
+    leftScale = 0.62;
     almostFlat = 0.0005;
     inc = 0.1;
     curvScale = 20;
-    roadWidth = 3;
+    roadWidth = 15;
     hasWidth = true;
     // To avoid warnings:
-    curveLength = 100;
-    flatLength = 100;
-    leftScale = 0.1;
+    curveLength = 10;
+    flatLength = 10;
     maxCurv = 1;
     roadId = 0;
     trajId = 0;
     almostFlat = 0.1;
-    curvScale = 1;
+    curvScale = 2;
     curveLength = 1;
-    flatLength = 0;
+    flatLength = 5;
     hasWidth = true;
     inc = 0;
     // up to here the values don't have to make sense
@@ -235,18 +233,22 @@ void Road::drawRibbonFromPoints()
     Point3f pt(0, 0, 0), dir(1, 0, 0), nor(0, 0, 0),
             pt1(points[0].pt.x(), points[0].pt.y() + 2*roadWidth, 0), 
             pt2(points[0].pt.x(), points[0].pt.y() - roadWidth, 0);
+    int nrpt = points.size();
     glNewList(roadId, GL_COMPILE);
     glColor3f(1, 1, 0);  // yellow
     glBegin(GL_TRIANGLE_STRIP);
     glVertex2f(pt1.x(), pt1.y());
     glVertex2f(pt2.x(), pt2.y());
-    for (unsigned int i = 1; i < points.size(); i++) 
+    for (unsigned int i = 1; i < nrpt; i++) 
     {
         pt = points[i].pt;
         dir = pt;
         dir -= points[i - 1].pt;
         nor = points[i].norm; // already computed
-        nor *= roadWidth;
+        if (nrpt > 2000 && i < 100)
+            nor *= 2 * roadWidth;
+        else
+            nor *= roadWidth;
         pt1 = pt;
         pt1 += nor;
         pt2 = pt;
@@ -379,7 +381,7 @@ void Road::drawRibbonPtList(ifstream &fin)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glBegin(GL_TRIANGLE_STRIP);
     Point3f pt(0, 0, 0), oldPt(0, 0, 0), nor(0, 0, 0),
-            pt1(0, roadWidth, 0), pt2(0, -roadWidth, 0), dir(1, 0, 0);
+            pt1(0, 2*roadWidth, 0), pt2(0, -roadWidth, 0), dir(1, 0, 0);
     float dist, cosTau, sinTau, oldDist = 0, deltad, dx, dy;
     fin >> oldDist >> sinTau >> dist;
     glVertex2f(pt1.x(), pt1.y());
@@ -472,6 +474,8 @@ void Road::readCenterList(ifstream &fin)
             // Calculate the curvature based on the angle between the two segments used above
             cosTau = pt1.scalarprod(pt2) / (pt1.norm() * pt2.norm());
             sinTau = sqrt(1 - cosTau * cosTau);
+            if (pt1[0] * pt2[1] - pt1[1] * pt2[0] < 0) // z coordinate of the cross-product
+                sinTau = -sinTau; // going the other way
             points[i - 1].curv = sinTau;
             updateMinMax(point.pt, sinTau);
         }
@@ -864,6 +868,59 @@ void Road::findKeyFrames()
         }
     }
     cout << "Total key frames: " << keyframes.size() << endl;
+}
+
+// Output the key frames. If they're not computed, compute them first.
+void Road::outputKeyFrames()
+{
+    if (keyframes.size() == 0)
+        findKeyFrames();
+    cout << "Nr\tKeyframe\tlength\tsign\tdist" << endl;
+    for (int i = 0; i < keyframes.size(); i++) {
+        cout << i << " " << keyframes[i].pt << " " << keyframes[i].length
+            << " " << keyframes[i].sign << " " << points[keyframes[i].pt].dist << endl;
+    }
+}
+
+// Compute the keyframes as the points where the curvature changes sign.
+void Road::computeCurvChangePts()
+{
+    KeyFrame kf;
+    for (int i = 0; i < points.size(); i++) {
+        if (i == 0 || i == points.size() - 1 || points[i - 1].curv * points[i].curv <= 0) {
+            kf.pt = i;
+            if (points[i].curv < 0)
+                kf.sign = -1;
+            else if (points[i].curv == 0)
+                kf.sign = 0;
+            else
+                kf.sign = 1;
+            if (i == 0)
+                kf.length = 0;
+            else
+                kf.length = i - keyframes[keyframes.size() - 1].pt;
+            cout << keyframes.size() << " " << kf.pt << " " << kf.length << " " << kf.sign << endl;
+            keyframes.push_back(kf);
+        }
+    }
+}
+
+// Output all the points where the trajectory changes sign or it is 0.
+void Road::outputCurvChangePts()
+{
+    for (int i = 0; i < points.size(); i++) {
+        if (i == 0 || i == points.size() - 1 || points[i - 1].curv * points[i].curv <= 0)
+            cout << i << " " << points[i].dist << " " << points[i].curv << endl;
+    }
+}
+
+// Output all the points with distance and curvature
+void Road::outputPoints()
+{
+    for (int i = 0; i < points.size(); i++) {
+        cout << i << " " << points[i].pt << " "
+             << points[i].dist << " " << points[i].curv << endl;
+    }
 }
 
 // update the min and max coordinates in the whole road

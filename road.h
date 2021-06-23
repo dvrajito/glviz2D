@@ -177,6 +177,18 @@ public:
     // where the trajectory curves the most, or the middle of a continuous stretch
     void findKeyFrames();
 
+    // Output the key frames. If they're not computed, compute them first.
+    void outputKeyFrames();
+
+    // Output all the points where the trajectory changes sign or it is 0.
+    void outputCurvChangePts();
+    
+    // Compute the keyframes as the points where the curvature changes sign.
+    void computeCurvChangePts();
+
+    // Output all the points with distance and curvature
+    void outputPoints();
+
     // update the boudaries points so that we know how to draw the road
     void updateMinMax(Point3f &pt, float curv);
 
