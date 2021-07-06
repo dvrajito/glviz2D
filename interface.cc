@@ -17,8 +17,8 @@
 Road *rd = NULL;
 bool timer_on = false;
 int winWidth = 1200, winHeight = 900;
-//char roadFile[100] = ROAD_FILE_ROOT"trajectory21/ALpine2center.txt";
-char roadFile[100] = ROAD_FILE_ROOT"curvature/curvALpine2R.txt";
+char roadFile[100] = ROAD_FILE_ROOT"trajectory21/ALpine2center.txt";
+//char roadFile[100] = ROAD_FILE_ROOT"curvature/curvALpine2R.txt";
 char trajFile[100] = "";// ROAD_FILE_ROOT"trajectory18/trajGlbsEtrack5.txt";
 
 // initialize the window and GUI, create the road
@@ -177,10 +177,12 @@ void createObjects()
 {
     //rd = new Road("alpine2curv.txt");
     //rd = new Road("CGSpeedway1Curv.txt");
-    rd = new Road(roadFile);
-    //rd = new Road();
-    //rd->readCenter(roadFile);
-    //rd->draw();
+    
+    //rd = new Road(roadFile);
+    
+    rd = new Road();
+    rd->readCenter(roadFile, linear, 0.2);
+    rd->draw();
     //rd->outputKeyFrames();
     rd->computeCurvChangePts();
     rd->outputCurvChangePts();

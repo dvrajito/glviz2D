@@ -54,7 +54,7 @@ void Road::init()
     almostFlat = 0.0005;
     inc = 0.1;
     curvScale = 20;
-    roadWidth = 15;
+    roadWidth = 5;
     hasWidth = true;
     // To avoid warnings:
     curveLength = 10;
@@ -149,6 +149,18 @@ void Road::readCenter(char* filename)
     ifstream fin(filename);
     if (fin.good())
         readCenterList(fin);
+    else
+        cout << "Could not open the road centerline file " << filename << endl;
+    fin.close();
+}
+
+// Read the road from a file containing the centerline points
+// and store the points in the vector
+void Road::readCenter(char* filename, InterpType inter, float step)
+{
+    ifstream fin(filename);
+    if (fin.good())
+        readCenterList(fin, inter, step);
     else
         cout << "Could not open the road centerline file " << filename << endl;
     fin.close();
@@ -482,6 +494,72 @@ void Road::readCenterList(ifstream &fin)
     }
     totalDist = points[nrPoints - 1].dist + points[nrPoints - 1].pt.distance(points[0].pt);
     cout << "min: " << min << " max: " << max << " maxCurv " << maxCurv 
+        << " total dist " << totalDist << endl;
+}
+
+// Read the centerline points from the file, interpolate the points following 
+// a given step and an interpolation type, then calculate and store the curvature 
+void Road::readCenterList(ifstream& fin, InterpType inter, float step)
+{
+    if (inter != linear && inter != cubic)
+        return readCenterList(fin);
+    int nrPoints, j = 1;
+    float cosTau, sinTau, totalDist, realDist, scaleF, alpha = 0, inc;
+    fin >> nrPoints >> realDist;
+    RoadPt point, point1, point2;
+    Point3f nor(0, 1, 0), pt1, pt2;
+    point1.norm = nor;
+    fin >> point1.pt[0] >> point1.pt[1];
+    point1.pt[2] = 0;
+    point1.dist = 0;
+    point1.curv = 0;
+    point1.traj = 0;
+    points.push_back(point1);
+    point2.norm = nor;
+    point2.traj = 0;
+    point2.curv = 0;
+    copyPoint(point, point1);
+    for (int i = 1; i < nrPoints; i++) {
+        fin >> point2.pt[0] >> point2.pt[1];
+        point2.dist = point1.dist + point2.pt.distance(point1.pt);
+        if (i > 1) {
+            // calculate the normal as the average of the normal to the previous two segments
+            pt1 = points[i - 1].pt;
+            pt1 -= points[i - 2].pt;
+            pt1.rotate_z(RADIANS(90));
+            pt2 = points[i].pt;
+            pt2 -= points[i - 1].pt;
+            pt2.rotate_z(RADIANS(90));
+            point2.norm = pt1;
+            point2.norm += pt2;
+            point2.norm.normalize();
+            // Calculate the curvature based on the angle between the two segments used above
+            cosTau = pt1.scalarprod(pt2) / (pt1.norm() * pt2.norm());
+            sinTau = sqrt(1 - cosTau * cosTau);
+            if (pt1[0] * pt2[1] - pt1[1] * pt2[0] < 0) // z coordinate of the cross-product
+                sinTau = -sinTau; // going the other way
+            point2.curv = sinTau;
+            updateMinMax(point.pt, sinTau);
+        }
+        inc = step / (point2.dist - point1.dist);
+        alpha = (point.dist - point1.dist) / (point2.dist - point1.dist);
+        if (inter == quadr)
+            point.quadraticInterpolate(point1, point2, 0); // recalculate the polynomial
+        while (point.dist < point2.dist || alpha < 1) {
+            if (inter == linear)
+                point.linearInterpolate(point1, point2, alpha);
+            else if (inter == quadr) {
+                point.quadraticInterpolate(point1, point2, alpha);
+                point.dist = points[points.size() - 1].dist +
+                    point.pt.distance(points[points.size() - 1].pt);
+            }
+            points.push_back(point);
+            alpha += inc;
+        }
+        copyPoint(point1, point2);
+    }
+    totalDist = points[nrPoints - 1].dist + points[nrPoints - 1].pt.distance(points[0].pt);
+    cout << "min: " << min << " max: " << max << " maxCurv " << maxCurv
         << " total dist " << totalDist << endl;
 }
 

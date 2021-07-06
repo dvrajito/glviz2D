@@ -18,17 +18,12 @@
 using namespace std;
 #include "point3f.h"
 #include <cmath>
+#include "roadPt.h"
 
 #define MAX_TRAJ 0.8
-#define MMAX(a, b) a > b ? a : b
-#define MMIN(a, b) a > b ? b : a
 
-struct RoadPt {
-    float dist;
-    Point3f pt, norm, trjPt;
-    float curv;
-    float traj;
-};
+// need to be able to move the data around
+void copyPoint(RoadPt &pt1, RoadPt pt2);
 
 struct KeyFrame {
     int pt;
@@ -126,12 +121,19 @@ public:
     // Read the road from a file containing the centerline and store the points in a vector
     void readCenter(char* filename);
 
+    // Read the road from a file containing the centerline and store the points in a vector
+    void readCenter(char* filename, InterpType inter, float step);
+
     // Read the data from the file, calculate and store the points 
     void readPointList(ifstream &fin);
 
     // Read the centerline points from the file, calculate and store the curvature 
     void readCenterList(ifstream& fin);
-    
+
+    // Read the centerline points from the file, interpolate the points following 
+    // a given step and an interpolation type, then calculate and store the curvature 
+    void readCenterList(ifstream& fin, InterpType inter, float step);
+
     // Read the data from the file, calculate and store the points 
     void readPointList(ifstream &fin, float startPt, float endPt);
 
